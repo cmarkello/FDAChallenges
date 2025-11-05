@@ -48,8 +48,8 @@ RUN pip install \
         futures==2.2.0 \
         setuptools==10.2
 
-# Install python R library
-RUN pip install rpy2[all] && pip install rpy2 --upgrade
+# Install python tabstar
+RUN pip install tabstar
 
 # Install R packages
 RUN R -e "install.packages(c('archive', 'this.path', 'tseries'), \

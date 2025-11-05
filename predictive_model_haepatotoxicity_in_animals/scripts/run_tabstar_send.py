@@ -10,11 +10,10 @@ Date: TODAYS_DATE
 import argparse
 import sys
 import pandas as pd
-import rpy2.robjects as ro
-from rpy2.robjects.vectors import DataFrame
-from rpy2.robjects.packages import importr, data
-
-r_base = importr('base')
+import subprocess
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+from tabstar.tabstar_model import TabSTARClassifier
 
 
 def parse_args():
@@ -56,17 +55,34 @@ def parse_args():
     return parser.parse_args()
 
 def extract_data(training_zip_file, testing_zip_file, training_data_labels, testing_data_labels):
+    retcode = subprocess.call(['Rscript', 'send_data_extraction.R', '--training_zip_file', training_zip_file,
+                                    '--testing_zip_file', testing_zip_file,
+                                    '--training_data_labels', training_data_labels,
+                                    '--testing_data_labels', testing_data_labels], shell=True)
 
-    return training_dataframe, testing_dataframe
+    if retcode != 0:
+        raise Exception("Data extraction failed.")
+
+    training_df = pd.read_csv("training_data.csv")
+    testing_df = pd.read_csv("testing_data.csv")
+
+    return training_df, testing_df
+
+#TODO: Implement
+#def train_tabstar_model(training_df, testing_df):
+
 
 def main():
     """Main script logic."""
     args = parse_args()
 
-    training_dataframe, testing_dataframe = extract_data(args.training_zip_file,
+    training_df, testing_df = extract_data(args.training_zip_file,
                                                          args.testing_zip_file,
                                                          args.training_data_labels,
                                                          args.testing_data_labels)
+
+    #TODO
+    #train_tabstar_model(training_df, testing_df)
 
     try:
         print(args)
