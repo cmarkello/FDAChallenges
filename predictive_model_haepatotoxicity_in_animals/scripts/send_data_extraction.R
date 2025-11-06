@@ -33,6 +33,8 @@ option_list <- list(
   make_option(c("--testing_data_labels"), type = "character", default = NULL,
               help = "Path to the testing CSV file", metavar = "character"),
 
+  make_option(c("-o", "--output_dir"), type = "character", default = "output_data",
+              help = "Path to the output CSV files", metavar = "character")
 )
 # # Create OptionParser object
  opt_parser <- OptionParser(option_list = option_list)
@@ -45,8 +47,10 @@ training_zip_file <- opt$training_zip_file
 testing_zip_file <- opt$testing_zip_file
 training_data_labels<- opt$training_data_labels
 testing_data_labels <- opt$testing_data_labels
+output_dir <- opt$output_dir
 
 # Debug prints
+
 cat("Training ZIP:", training_zip_file, "\n")
 cat("Training CSV:", training_data_labels, "\n")
 cat("Testing ZIP:", testing_zip_file, "\n")
@@ -59,8 +63,8 @@ stopifnot(file.exists(training_data_labels))
 stopifnot(file.exists(testing_data_labels))
 
 # Create a base directory for all extracted files
-temp_dir_base <- tempfile()
-dir.create(temp_dir_base)
+temp_dir_base <- paste(output_dir, tempfile(), sep="")
+dir.create(temp_dir_base, recursive = TRUE)
 
 # Extract training zip
 archive_extract(training_zip_file, dir = temp_dir_base)
@@ -135,5 +139,7 @@ training_data$Target_Organ <- factor(training_data$Target_Organ, levels = c(1, 0
 # creating testing data
 testing_data <- liver_scores_target_organ[(liver_scores_target_organ$Target_Organ == "testing_data_Liver" |liver_scores_target_organ$Target_Organ ==  "testing_data_not_Liver"), ]
 
-write.csv(training_data, file = "training_data.csv", row.names = FALSE)
-write.csv(testing_data, file = "testing_data.csv", row.names = FALSE)
+write.csv(training_data, file = paste(output_dir, "/training_data.csv", sep = ""), row.names = FALSE)
+write.csv(testing_data, file = paste(output_dir, "/testing_data.csv", sep = ""), row.names = FALSE)
+# Print a message indicating where the files have been saved
+cat("Results have been written to", output_dir, "\n")
