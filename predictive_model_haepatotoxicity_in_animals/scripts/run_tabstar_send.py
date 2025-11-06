@@ -78,10 +78,10 @@ def extract_data(training_zip_file, testing_zip_file, training_data_labels, test
 #TODO: Implement
 def train_tabstar_model(training_df, testing_df):
 
-    x_train = training_df
+    x_train = training_df.iloc[:, 1:]
     y_train = x_train.pop('Target_Organ')
     is_cls = True
-    x_test = testing_df
+    x_test = testing_df.iloc[:, 1:]
     y_test = testing_df.pop('Target_Organ')
 
     # Sanity checks
@@ -99,8 +99,9 @@ def train_tabstar_model(training_df, testing_df):
     tabstar_cls = TabSTARClassifier if is_cls else TabSTARRegressor
     tabstar = tabstar_cls()
     tabstar.fit(x_train, y_train)
-    # tabstar.save("my_model_path.pkl")
-    # tabstar = TabSTARClassifier.load("my_model_path.pkl")
+    tabstar.save("my_model_path.pkl")
+    tabstar = TabSTARClassifier.load("my_model_path.pkl")
+    tabstar.fit(x_train, y_train)
     y_pred = tabstar.predict(x_test)
     print(f"Test prediction: {y_pred}")
     print(f"Test truth: {y_test}")
@@ -121,6 +122,7 @@ def main():
     training_df = pd.read_csv(f'{cwd}/test_out/training_data.csv')
     testing_df = pd.read_csv(f'{cwd}/test_out/testing_data.csv')
     train_tabstar_model(training_df, testing_df)
+    #TODO: Align the testing_data target label type
 
     try:
         print(args)
