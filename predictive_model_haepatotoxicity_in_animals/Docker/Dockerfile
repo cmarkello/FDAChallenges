@@ -48,8 +48,12 @@ RUN pip install \
         futures==2.2.0 \
         setuptools==10.2
 
-# Install python tabstar
-RUN pip install tabstar
+# Install python tabstar and other dependencies
+RUN pip install \
+        tabstar \
+        split-folders \
+        tensorflow \
+        keras --upgrade
 
 # Install R packages
 RUN R -e "install.packages(c('archive', 'this.path', 'tseries'), \
