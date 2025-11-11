@@ -118,6 +118,7 @@ def extract_data(training_zip_file, training_data_labels, testing_zip_file = Non
 
     training_df = pd.read_csv(f'{cwd}/test_out/training_data.csv')
     output_df_list = [training_df]
+    print(f"DEBUG x_train: {training_df}")
     if testing_zip_file is not None or testing_data_labels is not None:
         testing_df = pd.read_csv(f'{cwd}/test_out/testing_data.csv')
         output_df_list += [testing_df]
@@ -147,15 +148,15 @@ def train_tabstar_model(train_test_df_list):
     if x_test is None:
         assert y_test is None, "If x_test is None, y_test must also be None"
         print(f'DEBUG splitting test data from training data')
-        x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.1)
+        x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=2)
 
     assert isinstance(x_test, DataFrame), "x_test should be a pandas DataFrame"
     assert isinstance(y_test, Series), "y_test should be a pandas Series"
 
-    #tabstar_cls = TabSTARClassifier if is_cls else TabSTARRegressor
-    #tabstar = tabstar_cls()
-    #tabstar.fit(x_train, y_train)
-    #tabstar.save("my_model_path.FDA.pkl")
+    tabstar_cls = TabSTARClassifier if is_cls else TabSTARRegressor
+    tabstar = tabstar_cls()
+    tabstar.fit(x_train, y_train)
+    tabstar.save("my_model_path.BAYER.xpt.pkl")
 
     #tabstar = TabSTARClassifier.load("my_model_path.FDA.pkl")
     #tabstar.fit(x_train, y_train)
@@ -176,6 +177,8 @@ def main():
                                            args.testing_zip,
                                            args.testing_labels)
 
+    #cwd = os.getcwd()
+    #train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv')]
     train_tabstar_model(train_test_df_list)
     #TODO: Align the testing_data target label type
 

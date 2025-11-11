@@ -47,25 +47,20 @@ training_zip_file <- opt$training_zip_file
 
 training_data_labels<- opt$training_data_labels
 
-print("DEBUG: flag1")
-
 testing_zip_file <- opt$testing_zip_file
 testing_data_labels <- opt$testing_data_labels
-print("DEBUG: flag2")
 output_dir <- opt$output_dir
 
 # Debug prints
 
 cat("Training ZIP:", training_zip_file, "\n")
 cat("Training CSV:", training_data_labels, "\n")
-print("DEBUG: flag3")
 if (!is.null(testing_zip_file)) {
     cat("Testing ZIP:", testing_zip_file, "\n")
 }
 if (!is.null(testing_data_labels)) {
     cat("Testing CSV:", testing_data_labels, "\n")
 }
-print("DEBUG: flag4")
 
 # Check that all input files exist
 stopifnot(file.exists(training_zip_file))
@@ -80,12 +75,10 @@ archive_extract(training_zip_file, dir = temp_dir_base)
 print("Training zip extracted successfully.")
 
 # Extract testing zip
-print("DEBUG: flag5")
 if (!is.null(testing_zip_file)) {
     archive_extract(testing_zip_file, dir = temp_dir_base)
     print("Testing zip extracted successfully.")
 }
-print("DEBUG: flag6")
 
 
 
@@ -123,6 +116,8 @@ if (!is.null(testing_zip_file)) {
     combined_csv <- training_csv
 }
 combined_csv$STUDYID <- as.character(combined_csv$STUDYID)  # Ensure consistency
+replace_colname_lookup <- c(Target_Organ = "Label", Target_Organ = "LABEL") # Rename "Label" to "Target_Organ" for consistency
+combined_csv <- combined_csv %>% rename(any_of(replace_colname_lookup))
 print(head(combined_csv))
 
 #----------------------------------------------------------------------------
@@ -130,15 +125,18 @@ print(head(combined_csv))
 liver_scores <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_studyids,
                                                    path_db = path_db,
                                                    fake_study = TRUE,
-                                                   use_xpt_file =  FALSE,
+                                                   use_xpt_file =  TRUE,
                                                    output_individual_scores = TRUE,
                                                    output_zscore_by_USUBJID = FALSE)
 
-
+print("DEBUG liver_scores: ")
+print(head(liver_scores))
+write.csv(liver_scores, "/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores.csv")
 #-----------column harmonization of "liver_scores"-------------
 liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores,
                                                             Round = TRUE)
-
+print("DEBUG liver_scores_col_harmonized: ")
+print(head(liver_scores_col_harmonized))
 # Merge csv and scores data frame
 liver_scores_target_organ <- inner_join(combined_csv, liver_scores_col_harmonized , by = "STUDYID")
 
@@ -151,8 +149,10 @@ training_data$Target_Organ[toupper(training_data$Target_Organ) == "LIVER"] <- 1
 # Replace only the target_organ column values where they are "not_liver" with 0
 training_data$Target_Organ[toupper(training_data$Target_Organ) == "NOT_LIVER"] <- 0
 
-# Convert the target_organ column to a factor with levels 1 and 0
+# Convert the target_organ column to a numeric factor with levels 1 and 0
+print("DEBUG training_data BEFORE")
 training_data$Target_Organ <- factor(training_data$Target_Organ, levels = c(1, 0))
+print("DEBUG training_data AFTER")
 
 write.csv(training_data, file = paste(output_dir, "/training_data.csv", sep = ""), row.names = FALSE)
 
@@ -166,6 +166,9 @@ if (!is.null(testing_zip_file)) {
     # Replace only the target_organ column values where they are "not_liver" with 0
     testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "NOT_LIVER"] <- 0
     testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "TESTING_DATA_NOT_LIVER"] <- 0
+
+    # Convert the target_organ column to a numeric factor with levels 1 and 0
+    testing_data$Target_Organ <- factor(testing_data$Target_Organ, levels = c(1, 0))
 
     write.csv(testing_data, file = paste(output_dir, "/testing_data.csv", sep = ""), row.names = FALSE)
 }
