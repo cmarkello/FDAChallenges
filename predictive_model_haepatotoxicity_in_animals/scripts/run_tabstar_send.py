@@ -50,6 +50,14 @@ def parse_args():
         help="Input testing label file"
     )
 
+    # Input testing label file
+    parser.add_argument(
+        "-f", "--training_data_format",
+        type=str,
+        default="csv",
+        help="Input training data file format. Either 'xpt' or 'csv'. Default 'xpt'."
+    )
+
     parser.add_argument(
         "-v", "--verbose",
         action="store_true",
@@ -101,16 +109,18 @@ def get_directory_names(path):
 #
 #    return 'train_data.zip', 'test_data.zip', 'train_label.csv', 'test_label.csv'
 
-def extract_data(training_zip_file, training_data_labels, testing_zip_file = None, testing_data_labels = None):
+def extract_data(training_zip_file, training_data_labels, testing_zip_file = None, testing_data_labels = None, training_data_format = 'csv'):
     cwd = os.getcwd()
     print(f"DEBUG CWD: {cwd}")
     data_extraction_cmd = ['Rscript', f'{cwd}/example_input_app_data/send_data_extraction.R',
-                                    '--training_zip_file', f'{cwd}/{training_zip_file}',
-                                    '--training_data_labels', f'{cwd}/{training_data_labels}',
-                                    '--output_dir', f'{cwd}/test_out']
+                            '--training_zip_file', f'{cwd}/{training_zip_file}',
+                            '--training_data_labels', f'{cwd}/{training_data_labels}',
+                            '--training_data_format', training_data_format,
+                            '--output_dir', f'{cwd}/test_out']
     if testing_zip_file is not None and testing_data_labels is not None:
         data_extraction_cmd += ['--testing_zip_file', f'{cwd}/{testing_zip_file}', '--testing_data_labels', f'{cwd}/{testing_data_labels}']
 
+    print(f'DEBUG data_extraction_cmd: {data_extraction_cmd}')
     retcode = subprocess.check_call(data_extraction_cmd, cwd=cwd)
 
     if retcode != 0:
@@ -165,7 +175,7 @@ def train_tabstar_model(train_test_df_list):
     tabstar = tabstar_cls()
     tabstar.val_ratio = 0.5
     tabstar.fit(x_train, y_train)
-    tabstar.save("my_model_path.BAYER.xpt.pkl")
+    tabstar.save("my_model_path.FDA.xpt.pkl")
 
     #tabstar = TabSTARClassifier.load("my_model_path.FDA.pkl")
     #tabstar.fit(x_train, y_train)
@@ -182,9 +192,10 @@ def main():
     args = parse_args()
 
     train_test_df_list = extract_data(args.training_zip,
-                                           args.training_labels,
-                                           args.testing_zip,
-                                           args.testing_labels)
+                                      args.training_labels,
+                                      args.testing_zip,
+                                      args.testing_labels,
+                                      args.training_data_format)
 
     #cwd = os.getcwd()
     #train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv')]

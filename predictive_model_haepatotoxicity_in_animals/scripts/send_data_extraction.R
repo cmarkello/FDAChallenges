@@ -33,6 +33,9 @@ option_list <- list(
   make_option(c("--testing_data_labels"), type = "character", default = NULL,
               help = "Path to the testing CSV file", metavar = "character"),
 
+  make_option(c("--training_data_format"), type = "character", default = "csv",
+              help = "Training data file format. Either 'xpt' or 'csv'. Default: 'csv'.", metavar = "character"),
+
   make_option(c("-o", "--output_dir"), type = "character", default = "output_data",
               help = "Path to the output CSV files", metavar = "character")
 )
@@ -49,6 +52,7 @@ training_data_labels<- opt$training_data_labels
 
 testing_zip_file <- opt$testing_zip_file
 testing_data_labels <- opt$testing_data_labels
+training_data_format <- opt$training_data_format
 output_dir <- opt$output_dir
 
 # Debug prints
@@ -121,11 +125,10 @@ combined_csv <- combined_csv %>% rename(any_of(replace_colname_lookup))
 print(head(combined_csv))
 
 #----------------------------------------------------------------------------
-
 liver_scores <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_studyids,
                                                    path_db = path_db,
                                                    fake_study = TRUE,
-                                                   use_xpt_file =  FALSE,
+                                                   use_xpt_file = (training_data_format == 'xpt'),
                                                    output_individual_scores = TRUE,
                                                    output_zscore_by_USUBJID = FALSE)
 
