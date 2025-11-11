@@ -125,7 +125,7 @@ print(head(combined_csv))
 liver_scores <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_studyids,
                                                    path_db = path_db,
                                                    fake_study = TRUE,
-                                                   use_xpt_file =  TRUE,
+                                                   use_xpt_file =  FALSE,
                                                    output_individual_scores = TRUE,
                                                    output_zscore_by_USUBJID = FALSE)
 
@@ -158,6 +158,10 @@ write.csv(training_data, file = paste(output_dir, "/training_data.csv", sep = ""
 
 # creating testing data
 if (!is.null(testing_zip_file)) {
+    print("DEBUG testing_data BEFORE")
+    #TODO: figure out a better way to differentiate training and test rows
+    #   extract and hold test samples
+    #   then extract from liver_scores_target_organ via those sample IDs
     testing_data <- liver_scores_target_organ[(liver_scores_target_organ$Target_Organ == "testing_data_Liver" |liver_scores_target_organ$Target_Organ ==  "testing_data_not_Liver"), ]
     # Replace only the target_organ column values where they are "liver" with 1
     testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "LIVER"] <- 1
@@ -169,8 +173,11 @@ if (!is.null(testing_zip_file)) {
 
     # Convert the target_organ column to a numeric factor with levels 1 and 0
     testing_data$Target_Organ <- factor(testing_data$Target_Organ, levels = c(1, 0))
+    print("DEBUG testing_data")
+    print(testing_data)
 
     write.csv(testing_data, file = paste(output_dir, "/testing_data.csv", sep = ""), row.names = FALSE)
+    print("DEBUG testing_data AFTER")
 }
 
 # Print a message indicating where the files have been saved

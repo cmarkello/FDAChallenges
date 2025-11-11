@@ -145,16 +145,25 @@ def train_tabstar_model(train_test_df_list):
     assert isinstance(y_train, Series), "y should be a pandas Series"
     assert isinstance(is_cls, bool), "is_cls should be a boolean indicating classification or regression"
 
+    print("DEBUG flag1")
     if x_test is None:
         assert y_test is None, "If x_test is None, y_test must also be None"
+        print("DEBUG flag2")
         print(f'DEBUG splitting test data from training data')
-        x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=2)
+        x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.5)
+        print(f"DEBUG x_train: {x_train}")
+        print(f"DEBUG y_train: {y_train}")
+        print(f"DEBUG x_test: {x_test}")
+        print(f"DEBUG y_test: {y_test}")
+
+    print("DEBUG flag3")
 
     assert isinstance(x_test, DataFrame), "x_test should be a pandas DataFrame"
     assert isinstance(y_test, Series), "y_test should be a pandas Series"
 
     tabstar_cls = TabSTARClassifier if is_cls else TabSTARRegressor
     tabstar = tabstar_cls()
+    tabstar.val_ratio = 0.5
     tabstar.fit(x_train, y_train)
     tabstar.save("my_model_path.BAYER.xpt.pkl")
 
