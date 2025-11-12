@@ -50,12 +50,41 @@ def parse_args():
         help="Input testing label file"
     )
 
-    # Input testing label file
+    # Input training file format
     parser.add_argument(
         "-f", "--training_data_format",
         type=str,
         default="csv",
         help="Input training data file format. Either 'xpt' or 'csv'. Default 'xpt'."
+    )
+
+    # Input tabSTAR model file
+    parser.add_argument(
+        "-g", "--tabstar_model_file",
+        help="Input tabstar model file. OPTIONAL"
+    )
+
+    # Output tabSTAR model file
+    parser.add_argument(
+        "-o", "--tabstar_model_file_output_name",
+        default="my_model_path.pkl",
+        help="Input tabstar model file to save training to. OPTIONAL. Default 'my_model_path.pkl'."
+    )
+
+    # Input tabSTAR validation ratio size relative to total input training sample size
+    parser.add_argument(
+        "-r", "--val_ratio",
+        type=float,
+        default=0.1,
+        help="Input tabstar validation ratio for train validation sample split. OPTIONAL. Default 0.1."
+    )
+
+    # Input tabSTAR validation ratio size relative to total input training sample size
+    parser.add_argument(
+        "-s", "--test_size",
+        type=float,
+        default=0.25,
+        help="Input tabstar test ratio for train test sample split. OPTIONAL. Default 0.25."
     )
 
     parser.add_argument(
@@ -76,38 +105,6 @@ def get_directory_names(path):
         if os.path.isdir(full_path):
             directory_names.append(entry)
     return directory_names
-
-#def split_train_test_data(training_zip_file, training_data_labels):
-#    cwd = os.getcwd()
-#
-#    training_data_basename = os.path.splitext(os.path.basename(training_zip_file))[0]
-#    df_training_labels = pd.read_csv(f'{cwd}/{training_data_labels}')
-#
-#    with zipfile.ZipFile(f'{cwd}/{training_zip_file}', 'r') as zip_ref:
-#        zip_ref.extractall(f'{cwd}/{training_data_basename}')
-#
-#    all_sample_ids = get_directory_names(f'{cwd}/{training_data_basename}')
-#
-#    split
-#
-#
-#    train_sample_ids = get_directory_names(f'{cwd}/output/val')
-#    train_sample_df = df_training_labels[df_training_labels['STUDYID'].isin(train_sample_ids)]
-#
-#    test_sample_ids = get_directory_names(f'{cwd}/output/test')
-#    test_sample_df = df_training_labels[df_training_labels['STUDYID'].isin(test_sample_ids)]
-#
-#
-#    shutil.make_archive(f'{cwd}/train_data', "zip", f'{cwd}/output/train')
-#    shutil.make_archive(f'{cwd}/test_data', "zip", f'{cwd}/output/val')
-#
-#    shutil.rmtree(f'{cwd}/output/val')
-#    shutil.rmtree(f'{cwd}/output/test')
-#
-#    train_sample_df.to_csv(f'{cwd}/train_label.csv', index=False)
-#    test_sample_df.to_csv(f'{cwd}/test_label.csv', index=False)
-#
-#    return 'train_data.zip', 'test_data.zip', 'train_label.csv', 'test_label.csv'
 
 def extract_data(training_zip_file, training_data_labels, testing_zip_file = None, testing_data_labels = None, training_data_format = 'csv'):
     cwd = os.getcwd()
@@ -136,8 +133,8 @@ def extract_data(training_zip_file, training_data_labels, testing_zip_file = Non
     return output_df_list
 
 #TODO: Implement
-def train_tabstar_model(train_test_df_list):
-
+def train_tabstar_model(train_test_df_list, tabstar_model_file = None, tabstar_model_file_output_name = 'my_model_path.pkl', val_ratio: float = 0.1, test_size: float = 0.25):
+    cwd = os.getcwd()
     x_train = train_test_df_list[0].iloc[:, 1:]
     y_train = x_train.pop('Target_Organ')
     is_cls = True
@@ -147,60 +144,56 @@ def train_tabstar_model(train_test_df_list):
     if len(train_test_df_list) == 2:
         x_test = train_test_df_list[1].iloc[:, 1:]
         y_test = x_test.pop('Target_Organ')
-        print(f'DEBUG x_test: {x_test}')
-        print(f'DEBUG y_test: {y_test}')
 
     # Sanity checks
     assert isinstance(x_train, DataFrame), "x should be a pandas DataFrame"
     assert isinstance(y_train, Series), "y should be a pandas Series"
     assert isinstance(is_cls, bool), "is_cls should be a boolean indicating classification or regression"
 
-    print("DEBUG flag1")
     if x_test is None:
         assert y_test is None, "If x_test is None, y_test must also be None"
-        print("DEBUG flag2")
-        print(f'DEBUG splitting test data from training data')
-        x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0.5)
-        print(f"DEBUG x_train: {x_train}")
-        print(f"DEBUG y_train: {y_train}")
-        print(f"DEBUG x_test: {x_test}")
-        print(f"DEBUG y_test: {y_test}")
-
-    print("DEBUG flag3")
+        x_train, x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=test_size)
 
     assert isinstance(x_test, DataFrame), "x_test should be a pandas DataFrame"
     assert isinstance(y_test, Series), "y_test should be a pandas Series"
 
     tabstar_cls = TabSTARClassifier if is_cls else TabSTARRegressor
     tabstar = tabstar_cls()
-    tabstar.val_ratio = 0.5
-    tabstar.fit(x_train, y_train)
-    tabstar.save("my_model_path.FDA.xpt.pkl")
+    if tabstar_model_file is not None:
+        os.makedirs(f'{cwd}/{tabstar_model_file}_out/', exist_ok=True)
+        with zipfile.ZipFile(tabstar_model_file, 'r') as zf:
+            zf.extractall(f'{cwd}/{tabstar_model_file}_out/')
+        tabstar.load_dir = f'{cwd}/{tabstar_model_file}_out/'
 
-    #tabstar = TabSTARClassifier.load("my_model_path.FDA.pkl")
-    #tabstar.fit(x_train, y_train)
+    os.makedirs(f'{cwd}/{tabstar_model_file_output_name}_out/', exist_ok=True)
+    tabstar.save_dir = f'{cwd}/{tabstar_model_file_output_name}_out/'
+    tabstar.val_ratio = val_ratio
+    tabstar.fit(x_train, y_train)
+    tabstar.save(tabstar_model_file_output_name)
 
     y_pred = tabstar.predict(x_test)
     print(f"Test prediction: {y_pred}")
     print(f"Test truth: {y_test}")
     #metric = tabstar.score(X=x_test, y=y_test)
     #print(f"AUC: {metric:.4f}")
+    print(f'DEBUG outputting model to {cwd}/{tabstar_model_file_output_name}_out.zip')
+    shutil.make_archive(f'{cwd}/{tabstar_model_file_output_name}_out', "zip", f'{cwd}/{tabstar_model_file_output_name}_out')
+
 
 
 def main():
     """Main script logic."""
     args = parse_args()
 
-    train_test_df_list = extract_data(args.training_zip,
-                                      args.training_labels,
-                                      args.testing_zip,
-                                      args.testing_labels,
-                                      args.training_data_format)
+    #train_test_df_list = extract_data(args.training_zip,
+    #                                  args.training_labels,
+    #                                  args.testing_zip,
+    #                                  args.testing_labels,
+    #                                  args.training_data_format)
 
-    #cwd = os.getcwd()
-    #train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv')]
-    train_tabstar_model(train_test_df_list)
-    #TODO: Align the testing_data target label type
+    cwd = os.getcwd()
+    train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv'), pd.read_csv(f'{cwd}/test_out/testing_data.csv')]
+    train_tabstar_model(train_test_df_list, args.tabstar_model_file, args.tabstar_model_file_output_name, args.val_ratio, args.test_size)
 
     try:
         print(args)
