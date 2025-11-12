@@ -132,14 +132,10 @@ liver_scores <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_
                                                    output_individual_scores = TRUE,
                                                    output_zscore_by_USUBJID = FALSE)
 
-print("DEBUG liver_scores: ")
-print(head(liver_scores))
 write.csv(liver_scores, "/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores.csv")
 #-----------column harmonization of "liver_scores"-------------
 liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores,
                                                             Round = TRUE)
-print("DEBUG liver_scores_col_harmonized: ")
-print(head(liver_scores_col_harmonized))
 # Merge csv and scores data frame
 liver_scores_target_organ <- inner_join(combined_csv, liver_scores_col_harmonized , by = "STUDYID")
 
@@ -153,15 +149,12 @@ training_data$Target_Organ[toupper(training_data$Target_Organ) == "LIVER"] <- 1
 training_data$Target_Organ[toupper(training_data$Target_Organ) == "NOT_LIVER"] <- 0
 
 # Convert the target_organ column to a numeric factor with levels 1 and 0
-print("DEBUG training_data BEFORE")
 training_data$Target_Organ <- factor(training_data$Target_Organ, levels = c(1, 0))
-print("DEBUG training_data AFTER")
 
 write.csv(training_data, file = paste(output_dir, "/training_data.csv", sep = ""), row.names = FALSE)
 
 # creating testing data
 if (!is.null(testing_zip_file)) {
-    print("DEBUG testing_data BEFORE")
     #TODO: figure out a better way to differentiate training and test rows
     #   extract and hold test samples
     #   then extract from liver_scores_target_organ via those sample IDs
@@ -176,11 +169,8 @@ if (!is.null(testing_zip_file)) {
 
     # Convert the target_organ column to a numeric factor with levels 1 and 0
     testing_data$Target_Organ <- factor(testing_data$Target_Organ, levels = c(1, 0))
-    print("DEBUG testing_data")
-    print(testing_data)
 
     write.csv(testing_data, file = paste(output_dir, "/testing_data.csv", sep = ""), row.names = FALSE)
-    print("DEBUG testing_data AFTER")
 }
 
 # Print a message indicating where the files have been saved
