@@ -50,10 +50,11 @@ RUN pip install \
 
 # Install python tabstar and other dependencies
 RUN pip install \
-        tabstar \
         split-folders \
         tensorflow \
         keras --upgrade
+
+pip install git+https://github.com/cmarkello/TabSTAR.git
 
 # Install R packages
 RUN R -e "install.packages(c('archive', 'this.path', 'tseries'), \

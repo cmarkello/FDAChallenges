@@ -60,13 +60,13 @@ def parse_args():
 
     # Input tabSTAR model file
     parser.add_argument(
-        "-g", "--tabstar_model_file",
+        "-g", "--tabstar_input_model_file",
         help="Input tabstar model file. OPTIONAL"
     )
 
     # Output tabSTAR model file
     parser.add_argument(
-        "-o", "--tabstar_model_file_output_name",
+        "-o", "--tabstar_output_model_file",
         default="my_model_path.pkl",
         help="Input tabstar model file to save training to. OPTIONAL. Default 'my_model_path.pkl'."
     )
@@ -133,7 +133,7 @@ def extract_data(training_zip_file, training_data_labels, testing_zip_file = Non
     return output_df_list
 
 #TODO: Implement
-def train_tabstar_model(train_test_df_list, tabstar_model_file = None, tabstar_model_file_output_name = 'my_model_path.pkl', val_ratio: float = 0.1, test_size: float = 0.25):
+def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tabstar_output_model_file = 'my_model_path', val_ratio: float = 0.1, test_size: float = 0.25):
     cwd = os.getcwd()
     x_train = train_test_df_list[0].iloc[:, 1:]
     y_train = x_train.pop('Target_Organ')
@@ -165,25 +165,26 @@ def train_tabstar_model(train_test_df_list, tabstar_model_file = None, tabstar_m
     tabstar.global_batch = 128
     tabstar.max_epochs = 200
     tabstar.patience = 200
-    if tabstar_model_file is not None:
-        os.makedirs(f'{cwd}/{tabstar_model_file}_out/', exist_ok=True)
-        with zipfile.ZipFile(tabstar_model_file, 'r') as zf:
-            zf.extractall(f'{cwd}/{tabstar_model_file}_out/')
-        tabstar.load_dir = f'{cwd}/{tabstar_model_file}_out/'
+    if tabstar_input_model_file is not None:
+        tabstar_input_model_file_basename = tabstar_input_model_file.rsplit('.', 1)[0]
+        os.makedirs(f'{cwd}/{tabstar_input_model_file_basename}/', exist_ok=True)
+        with zipfile.ZipFile(f'{tabstar_input_model_file}', 'r') as zf:
+            zf.extractall(f'{cwd}/{tabstar_input_model_file_basename}/')
+        tabstar.load_dir = f'{cwd}/{tabstar_input_model_file_basename}/'
 
-    os.makedirs(f'{cwd}/{tabstar_model_file_output_name}_out/', exist_ok=True)
-    tabstar.save_dir = f'{cwd}/{tabstar_model_file_output_name}_out/'
+    os.makedirs(f'{cwd}/{tabstar_output_model_file}/', exist_ok=True)
+    tabstar.save_dir = f'{cwd}/{tabstar_output_model_file}/'
     tabstar.val_ratio = val_ratio
     tabstar.fit(x_train, y_train)
-    tabstar.save(tabstar_model_file_output_name)
+    tabstar.save(f'{cwd}/{tabstar_output_model_file}/{tabstar_output_model_file}.pkl')
 
     y_pred = tabstar.predict(x_test)
     print(f"Test prediction: {y_pred}")
     print(f"Test truth: {y_test}")
     #metric = tabstar.score(X=x_test, y=y_test)
     #print(f"AUC: {metric:.4f}")
-    print(f'DEBUG outputting model to {cwd}/{tabstar_model_file_output_name}_out.zip')
-    shutil.make_archive(f'{cwd}/{tabstar_model_file_output_name}_out', "zip", f'{cwd}/{tabstar_model_file_output_name}_out')
+    print(f'Outputting model to {cwd}/{tabstar_output_model_file}.zip')
+    shutil.make_archive(f'{cwd}/{tabstar_output_model_file}', "zip", f'{cwd}/{tabstar_output_model_file}')
 
 
 
@@ -191,15 +192,28 @@ def main():
     """Main script logic."""
     args = parse_args()
 
-    train_test_df_list = extract_data(args.training_zip,
-                                      args.training_labels,
-                                      args.testing_zip,
-                                      args.testing_labels,
-                                      args.training_data_format)
+    training_zip = args.training_zip
+    testing_zip = args.testing_zip
+    training_labels = args.training_labels
+    testing_labels = args.testing_labels
+    training_data_format = args.training_data_format
+    tabstar_input_model_file = args.tabstar_input_model_file
+    tabstar_output_model_file = args.tabstar_output_model_file
+    val_ratio = args.val_ratio
+    test_size = args.test_size
 
-    #cwd = os.getcwd()
-    #train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv'), pd.read_csv(f'{cwd}/test_out/testing_data.csv')]
-    #train_tabstar_model(train_test_df_list, args.tabstar_model_file, args.tabstar_model_file_output_name, args.val_ratio, args.test_size)
+    # Check if we are just running evaluation or training and evaluating
+    if (training_zip is None and testing_zip is not None):
+        training_zip = testing_zip
+        testing_zip = None
+
+    train_test_df_list = extract_data(training_zip,
+                                     training_labels,
+                                     testing_zip,
+                                     testing_labels,
+                                     training_data_format)
+
+    train_tabstar_model(train_test_df_list, tabstar_input_model_file, tabstar_output_model_file, val_ratio, test_size)
 
     try:
         print(args)
