@@ -159,6 +159,12 @@ def train_tabstar_model(train_test_df_list, tabstar_model_file = None, tabstar_m
 
     tabstar_cls = TabSTARClassifier if is_cls else TabSTARRegressor
     tabstar = tabstar_cls()
+    tabstar.lora_lr = 0.001
+    tabstar.lora_r = 32
+    tabstar.lora_batch = 16
+    tabstar.global_batch = 128
+    tabstar.max_epochs = 200
+    tabstar.patience = 200
     if tabstar_model_file is not None:
         os.makedirs(f'{cwd}/{tabstar_model_file}_out/', exist_ok=True)
         with zipfile.ZipFile(tabstar_model_file, 'r') as zf:
@@ -185,15 +191,15 @@ def main():
     """Main script logic."""
     args = parse_args()
 
-    #train_test_df_list = extract_data(args.training_zip,
-    #                                  args.training_labels,
-    #                                  args.testing_zip,
-    #                                  args.testing_labels,
-    #                                  args.training_data_format)
+    train_test_df_list = extract_data(args.training_zip,
+                                      args.training_labels,
+                                      args.testing_zip,
+                                      args.testing_labels,
+                                      args.training_data_format)
 
-    cwd = os.getcwd()
-    train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv'), pd.read_csv(f'{cwd}/test_out/testing_data.csv')]
-    train_tabstar_model(train_test_df_list, args.tabstar_model_file, args.tabstar_model_file_output_name, args.val_ratio, args.test_size)
+    #cwd = os.getcwd()
+    #train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv'), pd.read_csv(f'{cwd}/test_out/testing_data.csv')]
+    #train_tabstar_model(train_test_df_list, args.tabstar_model_file, args.tabstar_model_file_output_name, args.val_ratio, args.test_size)
 
     try:
         print(args)

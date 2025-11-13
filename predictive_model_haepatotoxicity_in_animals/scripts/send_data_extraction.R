@@ -102,8 +102,11 @@ cat("Base directory:", path_db, "\n")
 cat("Study directories:\n")
 print(studyid_studyids)
 
+replace_colname_lookup <- c(Target_Organ = "Label", Target_Organ = "LABEL") # Rename "Label" to "Target_Organ" for consistency
+
 # Read training/testing CSVs (provided directly, not from ZIP)
 training_csv <- read.csv(training_data_labels)
+training_csv <- training_csv %>% rename(any_of(replace_colname_lookup))
 cat("Loaded training CSV:\n")
 print(head(training_csv))
 
@@ -115,12 +118,12 @@ if (!is.null(testing_zip_file)) {
 
 # Combine training and testing CSV
 if (!is.null(testing_zip_file)) {
+    testing_csv <- testing_csv %>% rename(any_of(replace_colname_lookup))
     combined_csv <- rbind(training_csv, testing_csv)
 } else {
     combined_csv <- training_csv
 }
 combined_csv$STUDYID <- as.character(combined_csv$STUDYID)  # Ensure consistency
-replace_colname_lookup <- c(Target_Organ = "Label", Target_Organ = "LABEL") # Rename "Label" to "Target_Organ" for consistency
 combined_csv <- combined_csv %>% rename(any_of(replace_colname_lookup))
 print(head(combined_csv))
 
