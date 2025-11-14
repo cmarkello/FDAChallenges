@@ -201,10 +201,10 @@ def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tab
     series_from_y_pred = pd.Series(y_pred, name='PREDICTION')
     combined_df = pd.concat([train_test_df_list[1]['STUDYID'], series_from_y_pred], axis=1)
     with open(f'{cwd}/test_out/test_prediction.csv', 'w') as csvfile:
-        csvfile.write(f'STUDYID,Predicted hepatotoxicity score')
+        csvfile.write(f'STUDYID,Predicted hepatotoxicity score\n')
         for index, row in combined_df.iterrows():
             prediction_str = f'{row['STUDYID']}, {row['PREDICTION']}'
-            csvfile.write(prediction_str)
+            csvfile.write(f'{prediction_str}\n')
             print(f'Test prediction: {prediction_str}')
 
     print(f'Outputting trained model to {cwd}/{tabstar_output_model_file}')
@@ -239,10 +239,10 @@ def run_tabstar_model(test_df, tabstar_input_model_file = None, val_ratio: float
     series_from_y_pred = pd.Series(y_pred, name='PREDICTION')
     combined_df = pd.concat([train_test_df_list[1]['STUDYID'], series_from_y_pred], axis=1)
     with open(f'{cwd}/test_out/test_prediction.csv', 'w') as csvfile:
-        csvfile.write(f'STUDYID,Predicted hepatotoxicity score')
+        csvfile.write(f'STUDYID,Predicted hepatotoxicity score\n')
         for index, row in combined_df.iterrows():
             prediction_str = f'{row['STUDYID']}, {row['PREDICTION']}'
-            csvfile.write(prediction_str)
+            csvfile.write(f'{prediction_str}\n')
             print(f'Test prediction: {prediction_str}')
 
 
@@ -272,8 +272,6 @@ def main():
                                          testing_labels,
                                          training_data_format)
 
-        #cwd = os.getcwd()
-        #train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv'), pd.read_csv(f'{cwd}/test_out/testing_data.csv')]
         train_tabstar_model(train_test_df_list, tabstar_input_model_file, tabstar_output_model_file, val_ratio, test_size)
 
     try:
