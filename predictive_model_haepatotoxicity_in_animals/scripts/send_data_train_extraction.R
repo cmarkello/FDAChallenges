@@ -33,8 +33,8 @@ option_list <- list(
   make_option(c("--testing_data_labels"), type = "character", default = NULL,
               help = "Path to the testing CSV file", metavar = "character"),
 
-  make_option(c("--training_data_format"), type = "character", default = "csv",
-              help = "Training data file format. Either 'xpt' or 'csv'. Default: 'csv'.", metavar = "character"),
+  make_option(c("--training_data_format"), type = "character", default = "xpt",
+              help = "Training data file format. Either 'xpt' or 'csv'. Default: 'xpt'.", metavar = "character"),
 
   make_option(c("-o", "--output_dir"), type = "character", default = "output_data",
               help = "Path to the output CSV files", metavar = "character")
@@ -80,7 +80,9 @@ print("Training zip extracted successfully.")
 
 # Extract testing zip
 if (!is.null(testing_zip_file)) {
-    archive_extract(testing_zip_file, dir = temp_dir_base)
+    temp_dir_base_test <- paste(output_dir, tempfile(), sep="")
+    dir.create(temp_dir_base_test, mode = "777", recursive = TRUE)
+    archive_extract(testing_zip_file, dir = temp_dir_base_test)
     print("Testing zip extracted successfully.")
 }
 
@@ -102,6 +104,24 @@ cat("Base directory:", path_db, "\n")
 cat("Study directories:\n")
 print(studyid_studyids)
 
+if (!is.null(testing_zip_file)) {
+  # List all files and directories recursively
+  all_extracted_files_test <- fs::dir_ls(temp_dir_base_test, recurse = TRUE, all = TRUE)
+
+  # Extract unique directory paths
+  unique_directories_test <- unique(fs::path_dir(all_extracted_files_test))
+
+  # Assign the base directory as path_db
+  path_db_test <- unique_directories_test[1]
+
+  # Assign the rest as studyid_studyids
+  studyid_studyids_test <- unique_directories_test[-1]
+
+  cat("Base test directory:", path_db_test, "\n")
+  cat("Study test directories:\n")
+  print(studyid_studyids_test)
+}
+
 replace_colname_lookup <- c(Target_Organ = "Label", Target_Organ = "LABEL") # Rename "Label" to "Target_Organ" for consistency
 
 # Read training/testing CSVs (provided directly, not from ZIP)
@@ -110,40 +130,41 @@ training_csv <- training_csv %>% rename(any_of(replace_colname_lookup))
 cat("Loaded training CSV:\n")
 print(head(training_csv))
 
-if (!is.null(testing_zip_file)) {
+if (!is.null(testing_data_labels)) {
     testing_csv <- read.csv(testing_data_labels)
+    testing_csv$STUDYID <- as.character(testing_csv$STUDYID)
+    testing_csv <- testing_csv %>% rename(any_of(replace_colname_lookup))
     cat("Loaded testing CSV:\n")
     print(head(testing_csv))
 }
 
 # Combine training and testing CSV
-if (!is.null(testing_zip_file)) {
-    testing_csv <- testing_csv %>% rename(any_of(replace_colname_lookup))
-    combined_csv <- rbind(training_csv, testing_csv)
-} else {
-    combined_csv <- training_csv
-}
+combined_csv <- training_csv
 combined_csv$STUDYID <- as.character(combined_csv$STUDYID)  # Ensure consistency
 combined_csv <- combined_csv %>% rename(any_of(replace_colname_lookup))
 print(head(combined_csv))
 
-#----------------------------------------------------------------------------
-liver_scores <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_studyids,
-                                                   path_db = path_db,
-                                                   fake_study = TRUE,
-                                                   use_xpt_file = (training_data_format == 'xpt'),
-                                                   output_individual_scores = TRUE,
-                                                   output_zscore_by_USUBJID = FALSE)
 
-write.csv(liver_scores, "/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores.csv")
+
+
+#----------------------------------------------------------------------------
+liver_scores_training <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_studyids,
+                                                           path_db = path_db,
+                                                           fake_study = TRUE,
+                                                           use_xpt_file = (training_data_format == 'xpt'),
+                                                           output_individual_scores = TRUE,
+                                                           output_zscore_by_USUBJID = FALSE)
+write.csv(liver_scores_training, file="/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores_training.csv")
 #-----------column harmonization of "liver_scores"-------------
-liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores,
+liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores_training,
                                                             Round = TRUE)
+write.csv(liver_scores_col_harmonized, file="/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores_col_harmonized_training.csv")
+
 # Merge csv and scores data frame
 liver_scores_target_organ <- inner_join(combined_csv, liver_scores_col_harmonized , by = "STUDYID")
 
 # get the training data and testing data
-training_data <- liver_scores_target_organ[!(liver_scores_target_organ$Target_Organ == "testing_data_Liver" |liver_scores_target_organ$Target_Organ ==  "testing_data_not_Liver"), ]
+training_data <- liver_scores_target_organ[(toupper(liver_scores_target_organ$Target_Organ) == "LIVER" |toupper(liver_scores_target_organ$Target_Organ) ==  "NOT_LIVER"), ]
 
 # Replace only the target_organ column values where they are "liver" with 1
 training_data$Target_Organ[toupper(training_data$Target_Organ) == "LIVER"] <- 1
@@ -158,20 +179,36 @@ write.csv(training_data, file = paste(output_dir, "/training_data.csv", sep = ""
 
 # creating testing data
 if (!is.null(testing_zip_file)) {
-    #TODO: figure out a better way to differentiate training and test rows
+    liver_scores_testing <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_studyids_test,
+                                                           path_db = path_db_test,
+                                                           fake_study = TRUE,
+                                                           use_xpt_file = (training_data_format == 'xpt'),
+                                                           output_individual_scores = TRUE,
+                                                           output_zscore_by_USUBJID = FALSE)
+    ## DEBUG
+    write.csv(liver_scores_testing, file="/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores_testing.csv")
+    #-----------column harmonization of "liver_scores"-------------
+    liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores_testing,
+                                                                Round = TRUE)
+    write.csv(liver_scores_col_harmonized, file="/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores_col_harmonized_testing.csv")
+
+    # Merge csv and scores data frame
     #   extract and hold test samples
-    #   then extract from liver_scores_target_organ via those sample IDs
-    testing_data <- liver_scores_target_organ[(liver_scores_target_organ$Target_Organ == "testing_data_Liver" |liver_scores_target_organ$Target_Organ ==  "testing_data_not_Liver"), ]
-    # Replace only the target_organ column values where they are "liver" with 1
-    testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "LIVER"] <- 1
-    testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "TESTING_DATA_LIVER"] <- 1
+    if (!is.null(testing_data_labels)) {
+      liver_scores_target_organ <- inner_join(testing_csv, liver_scores_col_harmonized , by = "STUDYID")
+      #   then extract from liver_scores_target_organ via those sample IDs
+      testing_data <- liver_scores_target_organ[(toupper(liver_scores_target_organ$Target_Organ) == "TESTING_DATA_LIVER" |toupper(liver_scores_target_organ$Target_Organ) ==  "TESTING_DATA_NOT_LIVER"), ]
+      # Replace only the target_organ column values where they are "liver" with 1
+      testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "TESTING_DATA_LIVER"] <- 1
 
-    # Replace only the target_organ column values where they are "not_liver" with 0
-    testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "NOT_LIVER"] <- 0
-    testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "TESTING_DATA_NOT_LIVER"] <- 0
+      # Replace only the target_organ column values where they are "not_liver" with 0
+      testing_data$Target_Organ[toupper(testing_data$Target_Organ) == "TESTING_DATA_NOT_LIVER"] <- 0
 
-    # Convert the target_organ column to a numeric factor with levels 1 and 0
-    testing_data$Target_Organ <- factor(testing_data$Target_Organ, levels = c(1, 0))
+      # Convert the target_organ column to a numeric factor with levels 1 and 0
+      testing_data$Target_Organ <- factor(testing_data$Target_Organ, levels = c(1, 0))
+    } else {
+      testing_data <- liver_scores_col_harmonized
+    }
 
     write.csv(testing_data, file = paste(output_dir, "/testing_data.csv", sep = ""), row.names = FALSE)
 }
