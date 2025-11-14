@@ -187,8 +187,8 @@ def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tab
     tabstar.lora_r = 32
     tabstar.lora_batch = 16
     tabstar.global_batch = 128
-    tabstar.max_epochs = 10
-    tabstar.patience = 5
+    tabstar.max_epochs = 200
+    tabstar.patience = 200
     tabstar.val_ratio = val_ratio
 
     tabstar_output_model_file_basename = tabstar_output_model_file.rsplit('.', 1)[0]

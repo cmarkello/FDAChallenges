@@ -18,14 +18,16 @@
 FROM ubuntu:24.04
 
 # Install default precisionFDA Ubuntu packages
-RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y --no-install-recommends \
+RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get update && apt-get install -y --no-install-recommends \
         aria2 \
         byobu \
         cmake \
         cpanminus \
         curl \
         dstat \
+        gfortran \
         g++ \
+        gcc \
         git \
         htop \
         libarchive-dev \
@@ -37,7 +39,20 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         python3-pip \
         r-base \
         wget \
-        xz-utils
+        xz-utils \
+        libssl-dev \
+        libsodium-dev \
+        libpng-dev \
+        libharfbuzz-dev \
+        libfribidi-dev \
+        libfreetype6-dev \
+        libfontconfig1-dev \
+        libfl-dev \
+        libgit2-dev build-essential \
+        libbz2-dev liblzma-dev \
+        libtiff-dev libjpeg-dev libwebp-dev \
+        libblas-dev liblapack-dev
+
 
 # Install default precisionFDA python packages
 RUN pip install --break-system-packages \
@@ -51,33 +66,38 @@ RUN pip install --break-system-packages \
                 tabstar \
                 split-folders==0.5.1 \
                 tensorflow \
+                gdown \
                 keras --upgrade
 
 RUN pip install --break-system-packages git+https://github.com/cmarkello/TabSTAR.git
 
 # Install R packages
-RUN R -e "install.packages(c('archive', 'this.path', 'tseries'), \
+RUN R -e "install.packages(c('archive', 'this.path', 'tseries', 'sendigR', 'randomForest', 'reprtree'), \
                            dependencies=TRUE, \
                            repos='http://cran.rstudio.com/')"
 RUN R -e "install.packages('devtools', \
                            dependencies=TRUE)"
-RUN R -e "install.packages('remotes', \
-                           dependencies=TRUE)"
-RUN R -e "remotes::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'), \
+
+RUN R -e "devtools::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'), \
                            dependencies=TRUE)"
 
 # Update apt-get
 RUN DEBIAN_FRONTEND=noninteractive apt-get update
 
 # Download helper executables
-RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -o /usr/bin/send_data_train_extraction.R --no-same-owner --no-same-permissions
-RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -o /usr/bin/send_data_test_extraction.R --no-same-owner --no-same-permissions
-RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -o /usr/bin/run_tabstar_send.py --no-same-owner --no-same-permissions
+RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -o /usr/bin/send_data_train_extraction.R
+RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -o /usr/bin/send_data_test_extraction.R
+RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -o /usr/bin/run_tabstar_send.py
+RUN chmod ugo+rwx /usr/bin/send_data_train_extraction.R /usr/bin/send_data_test_extraction.R /usr/bin/run_tabstar_send.py
+
 
 # Create directory /work and set it to $HOME and CWD
 RUN mkdir -p /work
 ENV HOME=/work
 WORKDIR /work
+# Download the default model
+RUN gdown https://drive.google.com/uc?id=1OtGhqnf40OuVnigx3CCmBaL3C2DEIFde -O ~/
+
 
 # Set entry point to container
 ENTRYPOINT ["/usr/bin/run_tabstar_send.py"]
