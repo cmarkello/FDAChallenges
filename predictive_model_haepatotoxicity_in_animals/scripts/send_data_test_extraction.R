@@ -81,7 +81,6 @@ liver_scores <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_
                                                    output_individual_scores = TRUE,
                                                    output_zscore_by_USUBJID = FALSE)
 
-write.csv(liver_scores, "/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores.csv")
 #-----------column harmonization of "liver_scores"-------------
 liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores,
                                                             Round = TRUE)

@@ -108,7 +108,6 @@ def get_directory_names(path):
 
 def extract_data_for_training(training_zip_file, training_data_labels, testing_zip_file = None, testing_data_labels = None, training_data_format = 'xpt'):
     cwd = os.getcwd()
-    print(f"DEBUG CWD: {cwd}")
     data_extraction_cmd = ['Rscript', f'{cwd}/example_input_app_data/send_data_train_extraction.R',
                             '--training_zip_file', f'{cwd}/{training_zip_file}',
                             '--training_data_labels', f'{cwd}/{training_data_labels}',
@@ -120,7 +119,6 @@ def extract_data_for_training(training_zip_file, training_data_labels, testing_z
     if testing_data_labels is not None:
         data_extraction_cmd += ['--testing_data_labels', f'{cwd}/{testing_data_labels}']
 
-    print(f'DEBUG data_extraction_cmd: {data_extraction_cmd}')
     retcode = subprocess.check_call(data_extraction_cmd, cwd=cwd)
 
     if retcode != 0:
@@ -128,7 +126,6 @@ def extract_data_for_training(training_zip_file, training_data_labels, testing_z
 
     training_df = pd.read_csv(f'{cwd}/test_out/training_data.csv')
     output_df_list = [training_df]
-    print(f"DEBUG x_train: {training_df}")
     if testing_zip_file is not None or testing_data_labels is not None:
         testing_df = pd.read_csv(f'{cwd}/test_out/testing_data.csv')
         output_df_list += [testing_df]
@@ -137,13 +134,11 @@ def extract_data_for_training(training_zip_file, training_data_labels, testing_z
 
 def extract_data_for_testing(testing_zip_file, training_data_format = 'xpt'):
     cwd = os.getcwd()
-    print(f"DEBUG CWD: {cwd}")
     data_extraction_cmd = ['Rscript', f'{cwd}/example_input_app_data/send_data_test_extraction.R',
                             '--testing_zip_file', f'{cwd}/{testing_zip_file}',
                             '--training_data_format', training_data_format,
                             '--output_dir', f'{cwd}/test_out']
 
-    print(f'DEBUG data_extraction_cmd: {data_extraction_cmd}')
     retcode = subprocess.check_call(data_extraction_cmd, cwd=cwd)
 
     if retcode != 0:

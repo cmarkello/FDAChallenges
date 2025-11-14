@@ -154,12 +154,9 @@ liver_scores_training <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids =
                                                            use_xpt_file = (training_data_format == 'xpt'),
                                                            output_individual_scores = TRUE,
                                                            output_zscore_by_USUBJID = FALSE)
-write.csv(liver_scores_training, file="/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores_training.csv")
 #-----------column harmonization of "liver_scores"-------------
 liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores_training,
                                                             Round = TRUE)
-write.csv(liver_scores_col_harmonized, file="/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores_col_harmonized_training.csv")
-
 # Merge csv and scores data frame
 liver_scores_target_organ <- inner_join(combined_csv, liver_scores_col_harmonized , by = "STUDYID")
 
@@ -185,13 +182,9 @@ if (!is.null(testing_zip_file)) {
                                                            use_xpt_file = (training_data_format == 'xpt'),
                                                            output_individual_scores = TRUE,
                                                            output_zscore_by_USUBJID = FALSE)
-    ## DEBUG
-    write.csv(liver_scores_testing, file="/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores_testing.csv")
     #-----------column harmonization of "liver_scores"-------------
     liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores_testing,
                                                                 Round = TRUE)
-    write.csv(liver_scores_col_harmonized, file="/home/cjmarkello/precisionFDAassetts/Predictive_Modeling_of_Hepatotoxicity/debug_output/liver_scores_col_harmonized_testing.csv")
-
     # Merge csv and scores data frame
     #   extract and hold test samples
     if (!is.null(testing_data_labels)) {
