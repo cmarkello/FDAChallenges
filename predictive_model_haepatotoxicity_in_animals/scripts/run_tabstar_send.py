@@ -2,9 +2,9 @@
 
 """
 Script Name: run_tabstar_send.py
-Description: DOES STUFF
-Author: AUTHOR
-Date: TODAYS_DATE
+Description: The applicaation for tabstar-based SEND data hepatotoxicity predictive modeling
+Author: Charles Markello
+Date: 11-13-2025
 """
 
 import argparse
@@ -23,7 +23,7 @@ from pandas import DataFrame, Series
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="TODO: ADD DESCRIPTION."
+        description="Arugment parser for the tabstar-based SEND data hepatotoxicity predictive model app."
     )
 
     # Input training zip file
@@ -198,14 +198,22 @@ def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tab
     tabstar.save(f'{cwd}/{tabstar_output_model_file_basename}/{tabstar_output_model_file_basename}.pkl')
 
     y_pred = tabstar.predict(x_test)
-    print(f"Test prediction: {y_pred}")
-    print(f'Outputting model to {cwd}/{tabstar_output_model_file}')
+    series_from_y_pred = pd.Series(y_pred, name='PREDICTION')
+    combined_df = pd.concat([train_test_df_list[1]['STUDYID'], series_from_y_pred], axis=1)
+    with open(f'{cwd}/test_out/test_prediction.csv', 'w') as csvfile:
+        csvfile.write(f'STUDYID,Predicted hepatotoxicity score')
+        for index, row in combined_df.iterrows():
+            prediction_str = f'{row['STUDYID']}, {row['PREDICTION']}'
+            csvfile.write(prediction_str)
+            print(f'Test prediction: {prediction_str}')
+
+    print(f'Outputting trained model to {cwd}/{tabstar_output_model_file}')
     shutil.make_archive(f'{cwd}/{tabstar_output_model_file_basename}', "zip", f'{cwd}/{tabstar_output_model_file_basename}')
     shutil.rmtree(f'{cwd}/{tabstar_output_model_file_basename}/')
 
 def run_tabstar_model(test_df, tabstar_input_model_file = None, val_ratio: float = 0.1):
     cwd = os.getcwd()
-    x_test = test_df
+    x_test = test_df.iloc[:, 1:]
     is_cls = True
 
     # Sanity checks
@@ -228,8 +236,14 @@ def run_tabstar_model(test_df, tabstar_input_model_file = None, val_ratio: float
     tabstar.val_ratio = val_ratio
 
     y_pred = tabstar.predict(x_test)
-    print(f"Test prediction: {y_pred}")
-
+    series_from_y_pred = pd.Series(y_pred, name='PREDICTION')
+    combined_df = pd.concat([train_test_df_list[1]['STUDYID'], series_from_y_pred], axis=1)
+    with open(f'{cwd}/test_out/test_prediction.csv', 'w') as csvfile:
+        csvfile.write(f'STUDYID,Predicted hepatotoxicity score')
+        for index, row in combined_df.iterrows():
+            prediction_str = f'{row['STUDYID']}, {row['PREDICTION']}'
+            csvfile.write(prediction_str)
+            print(f'Test prediction: {prediction_str}')
 
 
 def main():
