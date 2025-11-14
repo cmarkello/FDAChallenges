@@ -14,8 +14,8 @@
 
 # For more information please consult the app export section in the precisionFDA docs
 
-# Start with Ubuntu 20.04 base image
-FROM ubuntu:20.04
+# Start with Ubuntu 24.04  base image
+FROM ubuntu:24.04
 
 # Install default precisionFDA Ubuntu packages
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y --no-install-recommends \
@@ -33,38 +33,46 @@ RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -
         libcurl4-openssl-dev \
         libncurses5-dev \
         make \
-        perl \
-        pypy \
         python3-dev \
         python3-pip \
         r-base \
-        ruby2.7 \
         wget \
         xz-utils
 
 # Install default precisionFDA python packages
-RUN pip install \
+RUN pip install --break-system-packages \
         requests==2.5.0 \
         futures==2.2.0 \
         setuptools==10.2
 
 # Install python tabstar and other dependencies
-RUN pip install \
-        split-folders \
-        tensorflow \
-        keras --upgrade
+RUN pip install --break-system-packages \
+                pandas \
+                tabstar \
+                split-folders==0.5.1 \
+                tensorflow \
+                keras --upgrade
 
-pip install git+https://github.com/cmarkello/TabSTAR.git
+RUN pip install --break-system-packages git+https://github.com/cmarkello/TabSTAR.git
 
 # Install R packages
 RUN R -e "install.packages(c('archive', 'this.path', 'tseries'), \
                            dependencies=TRUE, \
                            repos='http://cran.rstudio.com/')"
-RUN R -e "devtools::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'), \
+RUN R -e "install.packages('devtools', \
+                           dependencies=TRUE)"
+RUN R -e "install.packages('remotes', \
+                           dependencies=TRUE)"
+RUN R -e "remotes::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'), \
                            dependencies=TRUE)"
 
 # Update apt-get
 RUN DEBIAN_FRONTEND=noninteractive apt-get update
+
+# Download helper executables
+RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -o /usr/bin/send_data_train_extraction.R --no-same-owner --no-same-permissions
+RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -o /usr/bin/send_data_test_extraction.R --no-same-owner --no-same-permissions
+RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -o /usr/bin/run_tabstar_send.py --no-same-owner --no-same-permissions
 
 # Create directory /work and set it to $HOME and CWD
 RUN mkdir -p /work
@@ -72,4 +80,4 @@ ENV HOME=/work
 WORKDIR /work
 
 # Set entry point to container
-ENTRYPOINT ["/usr/bin/run"]
+ENTRYPOINT ["/usr/bin/run_tabstar_send.py"]
