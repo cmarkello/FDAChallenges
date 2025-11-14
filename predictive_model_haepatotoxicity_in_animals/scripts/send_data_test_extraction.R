@@ -24,7 +24,7 @@ option_list <- list(
   make_option(c("--testing_zip_file"), type = "character", default = NULL,
               help = "Path to the testing zip file", metavar = "character"),
 
-  make_option(c("--testing_data_format"), type = "character", default = "xpt",
+  make_option(c("--training_data_format"), type = "character", default = "xpt",
               help = "Testing data file format. Either 'xpt' or 'csv'. Default: 'xpt'.", metavar = "character"),
 
   make_option(c("-o", "--output_dir"), type = "character", default = "output_data",
@@ -38,13 +38,13 @@ opt <- parse_args(opt_parser)
 
 # Set the zip file and output file path from command line arguments
 testing_zip_file <- opt$testing_zip_file
-testing_data_format <- opt$testing_data_format
+training_data_format <- opt$training_data_format
 output_dir <- opt$output_dir
 
 # Debug prints
 
 cat("Testing ZIP:", testing_zip_file, "\n")
-cat("Testing data format:", testing_data_format, "\n")
+cat("Testing data format:", training_data_format, "\n")
 
 # Check that all input files exist
 stopifnot(file.exists(testing_zip_file))
@@ -73,23 +73,6 @@ cat("Base directory:", path_db, "\n")
 cat("Study directories:\n")
 print(studyid_studyids)
 
-replace_colname_lookup <- c(Target_Organ = "Label", Target_Organ = "LABEL") # Rename "Label" to "Target_Organ" for consistency
-
-# Read training/testing CSVs (provided directly, not from ZIP)
-testing_csv <- data.frame("STUDYID" = studyid_studyids, Target_Organ = "NA")
-testing_csv <- testing_csv %>% rename(any_of(replace_colname_lookup))
-cat("Loaded testing CSV:\n")
-print(head(testing_csv))
-
-
-# Combine training and testing CSV
-if (!is.null(testing_zip_file)) {
-    combined_csv_test <- testing_csv
-    combined_csv_test$STUDYID <- as.character(combined_csv_test$STUDYID)  # Ensure consistency
-    combined_csv_test <- combined_csv %>% rename(any_of(replace_colname_lookup))
-    print(head(combined_csv_test))
-}
-
 #----------------------------------------------------------------------------
 liver_scores <- get_liver_om_lb_mi_tox_score_list(studyid_or_studyids = studyid_studyids,
                                                    path_db = path_db,
@@ -102,13 +85,10 @@ write.csv(liver_scores, "/home/cjmarkello/precisionFDAassetts/Predictive_Modelin
 #-----------column harmonization of "liver_scores"-------------
 liver_scores_col_harmonized <- get_col_harmonized_scores_df(liver_score_data_frame=liver_scores,
                                                             Round = TRUE)
-# Merge csv and scores data frame
-liver_scores_target_organ <- inner_join(combined_csv, liver_scores_col_harmonized , by = "STUDYID")
-
 # creating testing data
 #   extract and hold test samples
 #   then extract from liver_scores_target_organ via those sample IDs
-testing_data <- liver_scores_target_organ
+testing_data <- liver_scores_col_harmonized
 
 write.csv(testing_data, file = paste(output_dir, "/testing_data.csv", sep = ""), row.names = FALSE)
 

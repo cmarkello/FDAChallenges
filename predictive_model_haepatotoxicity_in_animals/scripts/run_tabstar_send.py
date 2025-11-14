@@ -67,8 +67,8 @@ def parse_args():
     # Output tabSTAR model file
     parser.add_argument(
         "-o", "--tabstar_output_model_file",
-        default="my_model_path.pkl",
-        help="Input tabstar model file to save training to. OPTIONAL. Default 'my_model_path.pkl'."
+        default="tabstar_model.zip",
+        help="Input tabstar model file to save training to. OPTIONAL. Default 'trained_model.zip'."
     )
 
     # Input tabSTAR validation ratio size relative to total input training sample size
@@ -153,7 +153,7 @@ def extract_data_for_testing(testing_zip_file, training_data_format = 'xpt'):
 
     return testing_df
 
-def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tabstar_output_model_file = 'default_tabstar_model', val_ratio: float = 0.1, test_size: float = 0.25):
+def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tabstar_output_model_file = 'trained_model.zip', val_ratio: float = 0.1, test_size: float = 0.25):
     cwd = os.getcwd()
     x_train = train_test_df_list[0].iloc[:, 1:]
     y_train = x_train.pop('Target_Organ')
@@ -181,12 +181,12 @@ def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tab
         with zipfile.ZipFile(f'{tabstar_input_model_file}', 'r') as zf:
             zf.extractall(f'{cwd}/{tabstar_input_model_file_basename}/')
         tabstar.load_dir = f'{cwd}/{tabstar_input_model_file_basename}/'
-    #else:
-    #    # Load the default packaged model
-    #    os.makedirs(f'{cwd}/default_tabstar_model/', exist_ok=True)
-    #    with zipfile.ZipFile(f'{cwd}/default_tabstar_model.zip', 'r') as zf:
-    #        zf.extractall(f'{cwd}/default_tabstar_model/')
-    #    tabstar = TabSTARClassifier.load(f'{cwd}/default_tabstar_model/default_tabstar_model.pkl')
+    else:
+        # Load the default packaged model
+        os.makedirs(f'{cwd}/default_tabstar_model/', exist_ok=True)
+        with zipfile.ZipFile(f'{cwd}/default_tabstar_model.zip', 'r') as zf:
+            zf.extractall(f'{cwd}/default_tabstar_model/')
+        tabstar = TabSTARClassifier.load(f'{cwd}/default_tabstar_model/default_tabstar_model.pkl')
 
     tabstar.lora_lr = 0.001
     tabstar.lora_r = 32
@@ -196,15 +196,17 @@ def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tab
     tabstar.patience = 5
     tabstar.val_ratio = val_ratio
 
-    os.makedirs(f'{cwd}/{tabstar_output_model_file}/', exist_ok=True)
-    tabstar.save_dir = f'{cwd}/{tabstar_output_model_file}/'
+    tabstar_output_model_file_basename = tabstar_output_model_file.rsplit('.', 1)[0]
+    os.makedirs(f'{cwd}/{tabstar_output_model_file_basename}/', exist_ok=True)
+    tabstar.save_dir = f'{cwd}/{tabstar_output_model_file_basename}/'
     tabstar.fit(x_train, y_train)
-    tabstar.save(f'{cwd}/{tabstar_output_model_file}/{tabstar_output_model_file}.pkl')
+    tabstar.save(f'{cwd}/{tabstar_output_model_file_basename}/{tabstar_output_model_file_basename}.pkl')
 
     y_pred = tabstar.predict(x_test)
     print(f"Test prediction: {y_pred}")
-    print(f'Outputting model to {cwd}/{tabstar_output_model_file}.zip')
-    shutil.make_archive(f'{cwd}/{tabstar_output_model_file}', "zip", f'{cwd}/{tabstar_output_model_file}')
+    print(f'Outputting model to {cwd}/{tabstar_output_model_file}')
+    shutil.make_archive(f'{cwd}/{tabstar_output_model_file_basename}', "zip", f'{cwd}/{tabstar_output_model_file_basename}')
+    shutil.rmtree(f'{cwd}/{tabstar_output_model_file_basename}/')
 
 def run_tabstar_model(test_df, tabstar_input_model_file = None, val_ratio: float = 0.1):
     cwd = os.getcwd()
@@ -251,21 +253,18 @@ def main():
 
     # Check if we are just running evaluation or training and evaluating
     if training_zip is None and testing_zip is not None:
-        test_df = extract_data_for_training(training_zip,
-                                            training_labels,
-                                            testing_zip,
-                                            testing_labels,
+        test_df = extract_data_for_testing(testing_zip,
                                             training_data_format)
         run_tabstar_model(test_df, tabstar_input_model_file, val_ratio)
     else:
-        #train_test_df_list = extract_data_for_training(training_zip,
-        #                                 training_labels,
-        #                                 testing_zip,
-        #                                 testing_labels,
-        #                                 training_data_format)
+        train_test_df_list = extract_data_for_training(training_zip,
+                                         training_labels,
+                                         testing_zip,
+                                         testing_labels,
+                                         training_data_format)
 
-        cwd = os.getcwd()
-        train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv'), pd.read_csv(f'{cwd}/test_out/testing_data.csv')]
+        #cwd = os.getcwd()
+        #train_test_df_list = [pd.read_csv(f'{cwd}/test_out/training_data.csv'), pd.read_csv(f'{cwd}/test_out/testing_data.csv')]
         train_tabstar_model(train_test_df_list, tabstar_input_model_file, tabstar_output_model_file, val_ratio, test_size)
 
     try:
