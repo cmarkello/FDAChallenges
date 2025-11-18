@@ -17,69 +17,44 @@
 # Start with Ubuntu 24.04  base image
 FROM ubuntu:24.04
 
-# Install default precisionFDA Ubuntu packages
+# Set environment variables to avoid interactive prompts during apt installations
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update package lists and install core system dependencies for R and Python
 RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get update && apt-get install -y --no-install-recommends \
-        aria2 \
-        byobu \
-        cmake \
-        cpanminus \
-        curl \
-        dstat \
-        gfortran \
-        g++ \
-        gcc \
-        git \
-        htop \
-        libarchive-dev \
-        libboost-all-dev \
-        libcurl4-openssl-dev \
-        libncurses5-dev \
-        make \
-        python3-dev \
-        python3-pip \
-        r-base \
-        wget \
-        xz-utils \
-        libssl-dev \
-        libsodium-dev \
-        libpng-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        libfreetype6-dev \
-        libfontconfig1-dev \
-        libfl-dev \
-        libgit2-dev build-essential \
-        libbz2-dev liblzma-dev \
-        libtiff-dev libjpeg-dev libwebp-dev \
-        libblas-dev liblapack-dev
+        software-properties-common dirmngr gnupg apt-transport-https build-essential \
+    python3 python3-pip python3-venv python3-dev libssl-dev libcurl4-gnutls-dev \
+    libxml2-dev libudunits2-dev && \
+    rm -rf /var/lib/apt/lists/*
 
+# Add the CRAN repository for the latest R packages (using 'noble' for Ubuntu 24.04)
+RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
+    add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/"
 
-# Install default precisionFDA python packages
-RUN pip install --break-system-packages \
-        requests==2.5.0 \
-        futures==2.2.0 \
-        setuptools==10.2
+# Install R base and development packages
+RUN apt-get update && apt-get install -y --no-install-recommends r-base r-base-dev && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install python tabstar and other dependencies
-RUN pip install --break-system-packages \
-                pandas \
-                tabstar \
-                split-folders==0.5.1 \
-                tensorflow \
-                gdown \
-                keras --upgrade
-
-RUN pip install --break-system-packages git+https://github.com/cmarkello/TabSTAR.git
-
-# Install R packages
-RUN R -e "install.packages(c('archive', 'this.path', 'tseries', 'sendigR', 'randomForest', 'reprtree'), \
-                           dependencies=TRUE, \
-                           repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('devtools', \
-                           dependencies=TRUE)"
+# Install R packages: devtools and others from CRAN
+RUN R -e "install.packages(c('devtools', 'remotes', 'archive', 'this.path'), repos='https://cloud.r-project.org')"
 
 RUN R -e "devtools::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'), \
                            dependencies=TRUE)"
+
+# Set up a Python virtual environment for better dependency management
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Upgrade pip and install python tabstar and other dependencies
+RUN pip install --upgrade pip && \
+    pip install --break-system-packages \
+        pandas \
+        split-folders==0.5.1 \
+        tensorflow \
+        gdown \
+        keras \
+        git+https://github.com/cmarkello/TabSTAR.git --upgrade
 
 # Update apt-get
 RUN DEBIAN_FRONTEND=noninteractive apt-get update
