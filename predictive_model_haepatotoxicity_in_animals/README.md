@@ -53,13 +53,18 @@ docker run  --rm -v $PWD:/work tab_star_send \
 
 ## Output
 
-The app writes 3 files to the directory `test_out`.
+The app writes 3 files to the directory `test_out`:
 - `training_data.csv` a CSV file containing the data as parsed and preprocessed by the modified SENDQSAR library prior to training the model.
 - `testing_data.csv` a CSV file containing the data as parsed and preprocessed by the modified SENDQSAR library prior to testing the model.
-  - `test_prediction.csv` a CSV file containing the hepatotoxicity prediction for each sample in the `testing_data.csv`. 
-  The first column `STUDYID` represents the test sample ID and the second column `Predicted hepatotoxicity score` 
-  represents the liver toxicity prediction where `1` represents hepatotoxicity and `0` represents no hepatotoxicity.
+- `test_prediction.csv` a CSV file containing the hepatotoxicity prediction for each sample in the `testing_data.csv`. 
+The first column `STUDYID` represents the test sample ID and the second column `Predicted hepatotoxicity score` 
+represents the liver toxicity prediction where `1` represents hepatotoxicity and `0` represents no hepatotoxicity.
 
+## Resource Requirements
+
+Running tests and training the model can be done on a moderately powerful laptop. 
+The laptop I developed this app on was a 16-core 4.5ghz CPU with 16GB of DDR5 RAM and an NVIDIA RTX 4060 Laptop GPU with 8 GB of VRAM.
+Given the size of the docker image, it would be recommended that the user run this image on a machine with at least 32 GB of RAM.
 
 ## Implementation
 
@@ -72,7 +77,12 @@ Training was done on a first-pass 200 epoch run using a learning rate of 0.001 a
 Training data used the xpt training and testing data that was given in the example app for predicting 
 hepatotoxicity in Animals.
 
-Resource Links:
+## Resource Links
+
+#### Project github repo
+https://github.com/cmarkello/FDAChallenges/tree/main/predictive_model_haepatotoxicity_in_animals
+
+#### Research
 https://eilamshapira.com/TabSTAR/
 https://github.com/alanarazi7/TabSTAR/tree/master
 https://aminuldu07.github.io/SENDQSAR/
