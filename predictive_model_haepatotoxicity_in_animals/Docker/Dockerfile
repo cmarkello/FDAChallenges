@@ -20,13 +20,6 @@ FROM ubuntu:24.04
 # Set environment variables to avoid interactive prompts during apt installations
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update package lists and install core system dependencies for R and Python
-#RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get update && apt-get install -y --no-install-recommends \
-#        software-properties-common dirmngr gnupg apt-transport-https build-essential \
-#    python3 python3-pip python3-venv python3-dev libssl-dev libcurl4-gnutls-dev \
-#    libxml2-dev libudunits2-dev && \
-#    rm -rf /var/lib/apt/lists/*
-
 # Update apt, install system dependencies for R and Python packages, and clean up
 RUN apt-get update && \
     apt-get install -y --no-install-recommends software-properties-common dirmngr wget gnupg apt-transport-https build-essential python3 python3-pip python3-venv && \
@@ -39,14 +32,6 @@ RUN apt-get update && \
     # Clean up apt caches to reduce image size
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Add the CRAN repository for the latest R packages (using 'noble' for Ubuntu 24.04)
-#RUN wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
-#    add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/"
-
-# Install R base and development packages
-#RUN apt-get update && apt-get install -y --no-install-recommends r-base r-base-dev && \
-#    rm -rf /var/lib/apt/lists/*
 
 # Install R packages: remotes and others from CRAN
 RUN R -e "install.packages(c('remotes', 'archive', 'this.path'), dependencies=TRUE, repos='https://cloud.r-project.org')"
