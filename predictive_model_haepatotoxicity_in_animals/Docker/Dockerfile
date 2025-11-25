@@ -17,77 +17,48 @@
 # Start with Ubuntu 24.04  base image
 FROM ubuntu:24.04
 
-# Install default precisionFDA Ubuntu packages
-RUN export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get update && apt-get install -y --no-install-recommends \
-        aria2 \
-        byobu \
-        cmake \
-        cpanminus \
-        curl \
-        dstat \
-        gfortran \
-        g++ \
-        gcc \
-        git \
-        htop \
-        libarchive-dev \
-        libboost-all-dev \
-        libcurl4-openssl-dev \
-        libncurses5-dev \
-        make \
-        python3-dev \
-        python3-pip \
-        r-base \
-        wget \
-        xz-utils \
-        libssl-dev \
-        libsodium-dev \
-        libpng-dev \
-        libharfbuzz-dev \
-        libfribidi-dev \
-        libfreetype6-dev \
-        libfontconfig1-dev \
-        libfl-dev \
-        libgit2-dev build-essential \
-        libbz2-dev liblzma-dev \
-        libtiff-dev libjpeg-dev libwebp-dev \
-        libblas-dev liblapack-dev
+# Set environment variables to avoid interactive prompts during apt installations
+ENV DEBIAN_FRONTEND=noninteractive
 
+# Update apt, install system dependencies for R and Python packages, and clean up
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends software-properties-common dirmngr wget gnupg apt-transport-https build-essential python3 python3-pip python3-venv && \
+    # Add CRAN repository for R 4.4 packages on Ubuntu Noble
+    wget -qO- https://cloud.r-project.org/bin/linux/ubuntu/marutter_pubkey.asc | tee -a /etc/apt/trusted.gpg.d/cran_ubuntu_key.asc && \
+    add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" && \
+    apt-get update && \
+    # Install R base and development packages
+    apt-get install -y --no-install-recommends r-base r-base-dev git && \
+    # Clean up apt caches to reduce image size
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install default precisionFDA python packages
-RUN pip install --break-system-packages \
-        requests==2.5.0 \
-        futures==2.2.0 \
-        setuptools==10.2
+# Install R packages: remotes and others from CRAN
+RUN R -e "install.packages(c('remotes', 'archive', 'this.path'), repos='https://cloud.r-project.org')"
 
-# Install python tabstar and other dependencies
-RUN pip install --break-system-packages \
-                pandas \
-                tabstar \
-                split-folders==0.5.1 \
-                tensorflow \
-                gdown \
-                keras --upgrade
+RUN R -e "remotes::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'))"
 
-RUN pip install --break-system-packages git+https://github.com/cmarkello/TabSTAR.git
+# Set up a Python virtual environment for better dependency management
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install R packages
-RUN R -e "install.packages(c('archive', 'this.path', 'tseries', 'sendigR', 'randomForest', 'reprtree'), \
-                           dependencies=TRUE, \
-                           repos='http://cran.rstudio.com/')"
-RUN R -e "install.packages('devtools', \
-                           dependencies=TRUE)"
+# Upgrade pip and install python tabstar and other dependencies
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir \
+        pandas \
+        split-folders==0.5.1 \
+        tensorflow \
+        gdown \
+        keras --upgrade
 
-RUN R -e "devtools::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'), \
-                           dependencies=TRUE)"
-
-# Update apt-get
-RUN DEBIAN_FRONTEND=noninteractive apt-get update
+## THIS INSTALLS 11 GB of stuff!
+RUN pip install --no-cache-dir git+https://github.com/cmarkello/TabSTAR.git
 
 # Download helper executables
-RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -o /usr/bin/send_data_train_extraction.R
-RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -o /usr/bin/send_data_test_extraction.R
-RUN curl https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -o /usr/bin/run_tabstar_send.py
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -o /usr/bin/send_data_train_extraction.R
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -o /usr/bin/send_data_test_extraction.R
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -o /usr/bin/run_tabstar_send.py
 RUN chmod ugo+rwx /usr/bin/send_data_train_extraction.R /usr/bin/send_data_test_extraction.R /usr/bin/run_tabstar_send.py
 
 
