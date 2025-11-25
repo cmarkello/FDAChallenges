@@ -56,9 +56,9 @@ RUN pip install --upgrade pip && \
 RUN pip install --no-cache-dir git+https://github.com/cmarkello/TabSTAR.git
 
 # Download helper executables
-RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -o /usr/bin/send_data_train_extraction.R
-RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -o /usr/bin/send_data_test_extraction.R
-RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -o /usr/bin/run_tabstar_send.py
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -O /usr/bin/send_data_train_extraction.R
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -O /usr/bin/send_data_test_extraction.R
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -O /usr/bin/run_tabstar_send.py
 RUN chmod ugo+rwx /usr/bin/send_data_train_extraction.R /usr/bin/send_data_test_extraction.R /usr/bin/run_tabstar_send.py
 
 
