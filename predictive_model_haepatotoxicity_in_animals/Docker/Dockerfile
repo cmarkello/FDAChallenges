@@ -28,13 +28,13 @@ RUN apt-get update && \
     add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" && \
     apt-get update && \
     # Install R base and development packages
-    apt-get install -y --no-install-recommends r-base r-base-dev git && \
+    apt-get install -y --no-install-recommends r-base r-base-dev git libarchive-dev libcurl4-openssl-dev libssl-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev libwebp-dev && \
     # Clean up apt caches to reduce image size
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install R packages: remotes and others from CRAN
-RUN R -e "install.packages(c('remotes', 'archive', 'this.path'), repos='https://cloud.r-project.org')"
+RUN R -e "install.packages(c('remotes', 'archive', 'this.path', 'openssl', 'devtools'), repos='https://cloud.r-project.org')"
 
 RUN R -e "remotes::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'))"
 
