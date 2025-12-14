@@ -45,6 +45,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Upgrade pip and install python tabstar and other dependencies
 RUN pip install --upgrade pip && \
+    pip install torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir \
         pandas \
         split-folders==0.5.1 \
