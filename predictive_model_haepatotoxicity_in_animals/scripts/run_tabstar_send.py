@@ -178,10 +178,10 @@ def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tab
         tabstar.load_dir = f'{cwd}/{tabstar_input_model_file_basename}/'
     else:
         # Load the default packaged model
-        os.makedirs(f'{cwd}/default_tabstar_model/', exist_ok=True)
-        with zipfile.ZipFile(f'{cwd}/default_tabstar_model.zip', 'r') as zf:
-            zf.extractall(f'{cwd}/default_tabstar_model/')
-        tabstar = TabSTARClassifier.load(f'{cwd}/default_tabstar_model/default_tabstar_model.pkl')
+        os.makedirs(f'{cwd}/tabstar_model/', exist_ok=True)
+        with zipfile.ZipFile(f'{cwd}/tabstar_model.zip', 'r') as zf:
+            zf.extractall(f'{cwd}/tabstar_model/')
+        tabstar = TabSTARClassifier.load(f'{cwd}/tabstar_model/tabstar_model.pkl')
 
     tabstar.lora_lr = 0.001
     tabstar.lora_r = 32
@@ -228,16 +228,16 @@ def run_tabstar_model(test_df, tabstar_input_model_file = None, val_ratio: float
         tabstar = TabSTARClassifier.load(f'{cwd}/{tabstar_input_model_file_basename}/{tabstar_input_model_file_basename}.pkl')
     else:
         # Load the default packaged model
-        os.makedirs(f'{cwd}/default_tabstar_model/', exist_ok=True)
-        with zipfile.ZipFile(f'{cwd}/default_tabstar_model.zip', 'r') as zf:
-            zf.extractall(f'{cwd}/default_tabstar_model/')
-        tabstar = TabSTARClassifier.load(f'{cwd}/default_tabstar_model/default_tabstar_model.pkl')
+        os.makedirs(f'{cwd}/tabstar_model/', exist_ok=True)
+        with zipfile.ZipFile(f'{cwd}/tabstar_model.zip', 'r') as zf:
+            zf.extractall(f'{cwd}/tabstar_model/')
+        tabstar = TabSTARClassifier.load(f'{cwd}/tabstar_model/tabstar_model.pkl')
 
     tabstar.val_ratio = val_ratio
 
     y_pred = tabstar.predict(x_test)
     series_from_y_pred = pd.Series(y_pred, name='PREDICTION')
-    combined_df = pd.concat([train_test_df_list[1]['STUDYID'], series_from_y_pred], axis=1)
+    combined_df = pd.concat([test_df['STUDYID'], series_from_y_pred], axis=1)
     with open(f'{cwd}/test_out/test_prediction.csv', 'w') as csvfile:
         csvfile.write(f'STUDYID,Predicted hepatotoxicity score\n')
         for index, row in combined_df.iterrows():
