@@ -28,13 +28,13 @@ RUN apt-get update && \
     add-apt-repository "deb https://cloud.r-project.org/bin/linux/ubuntu noble-cran40/" && \
     apt-get update && \
     # Install R base and development packages
-    apt-get install -y --no-install-recommends r-base r-base-dev git && \
+    apt-get install -y --no-install-recommends r-base r-base-dev git libarchive-dev libcurl4-openssl-dev libssl-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev libwebp-dev && \
     # Clean up apt caches to reduce image size
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Install R packages: remotes and others from CRAN
-RUN R -e "install.packages(c('remotes', 'archive', 'this.path'), repos='https://cloud.r-project.org')"
+RUN R -e "install.packages(c('remotes', 'archive', 'this.path', 'openssl', 'devtools'), repos='https://cloud.r-project.org')"
 
 RUN R -e "remotes::install_github(c('cmarkello/SENDQSAR','trevorld/r-optparse'))"
 
@@ -45,6 +45,7 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Upgrade pip and install python tabstar and other dependencies
 RUN pip install --upgrade pip && \
+    pip install torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir \
         pandas \
         split-folders==0.5.1 \
@@ -56,9 +57,9 @@ RUN pip install --upgrade pip && \
 RUN pip install --no-cache-dir git+https://github.com/cmarkello/TabSTAR.git
 
 # Download helper executables
-RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -o /usr/bin/send_data_train_extraction.R
-RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -o /usr/bin/send_data_test_extraction.R
-RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -o /usr/bin/run_tabstar_send.py
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_train_extraction.R -O /usr/bin/send_data_train_extraction.R
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/send_data_test_extraction.R -O /usr/bin/send_data_test_extraction.R
+RUN wget -qc https://raw.githubusercontent.com/cmarkello/FDAChallenges/refs/heads/main/predictive_model_haepatotoxicity_in_animals/scripts/run_tabstar_send.py -O /usr/bin/run_tabstar_send.py
 RUN chmod ugo+rwx /usr/bin/send_data_train_extraction.R /usr/bin/send_data_test_extraction.R /usr/bin/run_tabstar_send.py
 
 
