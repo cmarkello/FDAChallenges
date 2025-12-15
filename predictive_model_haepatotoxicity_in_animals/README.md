@@ -64,7 +64,7 @@ represents the liver toxicity prediction where `1` represents hepatotoxicity and
 
 Running tests and training the model can be done on a moderately powerful laptop. 
 The laptop I developed this app on was a 16-core 4.5ghz CPU with 16GB of DDR5 RAM and an NVIDIA RTX 4060 Laptop GPU with 8 GB of VRAM.
-Given the size of the docker image, it would be recommended that the user run this image on a machine with at least 32 GB of RAM.
+Given the size of the docker image, it would be recommended that the user run this image on a machine with at least 16 GB of RAM.
 
 ## Implementation
 
@@ -73,7 +73,7 @@ the SEND data provided by this challenge. This app uses some of the functions im
 SENDQSAR R library as originally developed by Md Aminul Islam Prodhan which were used in scripts for data extraction and 
 compilation for initial and iterative ML model training.
 
-Training was done on a first-pass 200 epoch run using a learning rate of 0.001 and a batch size of 16 samples.
+Training was done on a first-pass 500 epoch run using a learning rate of 0.001 and a batch size of 16 samples.
 Training data used the xpt training and testing data that was given in the example app for predicting 
 hepatotoxicity in Animals.
 
