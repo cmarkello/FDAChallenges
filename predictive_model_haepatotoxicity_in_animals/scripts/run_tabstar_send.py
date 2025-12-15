@@ -148,7 +148,7 @@ def extract_data_for_testing(testing_zip_file, training_data_format = 'xpt'):
 
     return testing_df
 
-def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tabstar_output_model_file = 'trained_model.zip', val_ratio: float = 0.1, test_size: float = 0.25):
+def train_tabstar_model(train_test_df_list, tabstar_input_model_file = None, tabstar_output_model_file = 'tabstar_model.zip', val_ratio: float = 0.1, test_size: float = 0.25):
     cwd = os.getcwd()
     x_train = train_test_df_list[0].iloc[:, 1:]
     y_train = x_train.pop('Target_Organ')
