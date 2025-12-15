@@ -53,7 +53,6 @@ RUN pip install --upgrade pip && \
         gdown \
         keras --upgrade
 
-## THIS INSTALLS 11 GB of stuff!
 RUN pip install --no-cache-dir git+https://github.com/cmarkello/TabSTAR.git
 
 # Download helper executables
