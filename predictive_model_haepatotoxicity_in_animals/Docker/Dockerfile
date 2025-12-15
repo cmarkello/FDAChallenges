@@ -68,7 +68,7 @@ RUN mkdir -p /work
 ENV HOME=/work
 WORKDIR /work
 # Download the default model
-RUN gdown https://drive.google.com/uc?id=1OtGhqnf40OuVnigx3CCmBaL3C2DEIFde -O ~/
+RUN gdown https://drive.google.com/uc?id=1NDoH8tlV5Ua1Yy4tVDgr6uZtjWAAMuvC -O ~/
 
 
 # Set entry point to container
